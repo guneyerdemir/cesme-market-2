@@ -140,7 +140,8 @@ EOF
 
 ln -sf "/etc/nginx/sites-available/${DOMAIN}" "/etc/nginx/sites-enabled/${DOMAIN}"
 nginx -t
-systemctl reload nginx
+systemctl enable nginx
+systemctl restart nginx || systemctl start nginx
 
 echo ""
 echo "======================================================================"
