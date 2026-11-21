@@ -34,6 +34,7 @@ from backend.models import (
     OrderStatusLog,
     Product,
     StoreMedia,
+    SystemMetadata,
     User,
 )
 from backend.notifications import notification_service
@@ -41,6 +42,7 @@ from backend.pos_integration import POSIntegrationService, slugify_tr
 from backend.schemas import (
     ORDER_STATUS_LABELS,
     ORDER_STATUS_LIST,
+    AdminPasswordChangeRequest,
     CartValidationRequest,
     CategorySchema,
     LoginRequest,
@@ -52,6 +54,7 @@ from backend.schemas import (
     CustomerLocationUpdateRequest,
     ProductCreateUpdateSchema,
     ProductSchema,
+    StoreContactUpdateRequest,
     StoreMediaCreateUpdateSchema,
     StoreMediaSchema,
     TokenResponse,
@@ -59,6 +62,7 @@ from backend.schemas import (
 from backend.security import (
     create_access_token,
     get_current_user,
+    hash_password,
     login_rate_limiter,
     order_rate_limiter,
     require_admin,
@@ -182,6 +186,25 @@ def health_check():
     }
 
 
+def _get_store_contact(db: Session) -> dict:
+    meta_rows = (
+        db.query(SystemMetadata)
+        .filter(
+            SystemMetadata.key.in_(
+                ["store_address", "store_phone", "store_whatsapp", "store_maps_url"]
+            )
+        )
+        .all()
+    )
+    meta_map = {r.key: r.value for r in meta_rows if r.value and r.value.strip()}
+    return {
+        "address": meta_map.get("store_address") or STORE_ADDRESS,
+        "phone": meta_map.get("store_phone") or STORE_PHONE,
+        "whatsapp": meta_map.get("store_whatsapp") or STORE_WHATSAPP,
+        "maps_url": meta_map.get("store_maps_url") or STORE_MAPS_URL,
+    }
+
+
 @app.get("/api/v1/store/layout")
 def get_store_layout(db: Session = Depends(get_db)):
     categories = (
@@ -194,12 +217,7 @@ def get_store_layout(db: Session = Depends(get_db)):
     return {
         "store_name": "ÇEŞME MARKET 2",
         "delivery_model": "Online Sipariş & Mağazadan Teslim (Ödeme Mağazada)",
-        "contact": {
-            "address": STORE_ADDRESS,
-            "phone": STORE_PHONE,
-            "whatsapp": STORE_WHATSAPP,
-            "maps_url": STORE_MAPS_URL,
-        },
+        "contact": _get_store_contact(db),
         "categories": [CategorySchema.model_validate(c) for c in categories],
         "integration": integration_info,
     }
@@ -621,12 +639,86 @@ def get_admin_dashboard(
         "low_stock_products": low_stock_products,
         "recent_notifications": notification_service.get_admin_feed()[:15],
         "integration": POSIntegrationService.get_integration_status(db),
+        "contact": _get_store_contact(db),
         "current_user": {
             "username": current_user.username,
             "full_name": current_user.full_name,
             "role": current_user.role,
         },
     }
+
+
+@app.get("/api/v1/admin/users")
+def list_admin_users(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    users = db.query(User).order_by(User.id.asc()).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "full_name": u.full_name,
+            "role": u.role,
+            "is_active": u.is_active,
+        }
+        for u in users
+    ]
+
+
+@app.post("/api/v1/admin/users/change-password")
+def change_user_password(
+    payload: AdminPasswordChangeRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_admin_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Mevcut yönetici şifrenizi hatalı girdiniz.",
+        )
+
+    target_user = (
+        db.query(User)
+        .filter(User.username == payload.target_username.strip())
+        .first()
+    )
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Şifresi değiştirilecek kullanıcı bulunamadı.",
+        )
+
+    target_user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return {
+        "updated": True,
+        "username": target_user.username,
+        "role": target_user.role,
+        "message": f"'{target_user.username}' hesabının şifresi başarıyla güncellendi.",
+    }
+
+
+@app.put("/api/v1/admin/settings/contact")
+def update_store_contact_settings(
+    payload: StoreContactUpdateRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    updates = {
+        "store_address": payload.address.strip(),
+        "store_phone": payload.phone.strip(),
+        "store_whatsapp": payload.whatsapp.strip(),
+        "store_maps_url": payload.maps_url.strip(),
+    }
+    for key, val in updates.items():
+        row = db.query(SystemMetadata).filter(SystemMetadata.key == key).first()
+        if row:
+            row.value = val
+        else:
+            db.add(SystemMetadata(key=key, value=val))
+    db.commit()
+    return _get_store_contact(db)
 
 
 @app.get("/api/v1/admin/orders", response_model=List[OrderResponseSchema])

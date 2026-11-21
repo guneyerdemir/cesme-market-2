@@ -134,6 +134,17 @@ class CesmeMarketApp {
     if (orderButton) orderButton.disabled = !whatsappNumber || cartStore.getItems().length === 0;
   }
 
+  private populateContactSettingsForm(): void {
+    const addrInput = document.getElementById('setting-store-address') as HTMLInputElement | null;
+    const phoneInput = document.getElementById('setting-store-phone') as HTMLInputElement | null;
+    const waInput = document.getElementById('setting-store-whatsapp') as HTMLInputElement | null;
+    const mapsInput = document.getElementById('setting-store-maps') as HTMLInputElement | null;
+    if (addrInput) addrInput.value = this.storeContact.address || '';
+    if (phoneInput) phoneInput.value = this.storeContact.phone || '';
+    if (waInput) waInput.value = this.storeContact.whatsapp || '';
+    if (mapsInput) mapsInput.value = this.storeContact.maps_url || '';
+  }
+
   private openWhatsAppOrderRequest(): void {
     const phone = this.storeContact.whatsapp.replace(/\D/g, '');
     const items = cartStore.getItems();
@@ -805,6 +816,12 @@ class CesmeMarketApp {
       const locationPanel = document.getElementById('admin-live-location-panel')!;
       locationPanel.hidden = this.currentAdminRole !== 'ADMIN';
       document.getElementById('admin-media-tab-btn')!.hidden = this.currentAdminRole !== 'ADMIN';
+      document.getElementById('admin-settings-tab-btn')!.hidden = this.currentAdminRole !== 'ADMIN';
+      if (dash.contact) {
+        this.storeContact = dash.contact;
+        this.renderStoreContact();
+        this.populateContactSettingsForm();
+      }
       const productPhotoFile = document.getElementById('prod-form-image') as HTMLInputElement;
       const productPhotoFields = productPhotoFile.closest('.form-field')!;
       const productPhotoActions = document.getElementById('btn-clear-product-image')!.closest('.form-field')!;
@@ -1341,16 +1358,6 @@ class CesmeMarketApp {
       }
     });
 
-    // Admin Login & Quick Demo Credential Buttons
-    document.getElementById('btn-fill-admin')!.addEventListener('click', () => {
-      (document.getElementById('admin-username') as HTMLInputElement).value = 'admin';
-      (document.getElementById('admin-password') as HTMLInputElement).value = 'CesmeAdmin2026!';
-    });
-    document.getElementById('btn-fill-staff')!.addEventListener('click', () => {
-      (document.getElementById('admin-username') as HTMLInputElement).value = 'personel';
-      (document.getElementById('admin-password') as HTMLInputElement).value = 'CesmePersonel2026!';
-    });
-
     document.getElementById('admin-login-form')!.addEventListener('submit', async (e) => {
       e.preventDefault();
       const u = (document.getElementById('admin-username') as HTMLInputElement).value.trim();
@@ -1361,6 +1368,7 @@ class CesmeMarketApp {
       try {
         const res = await ApiClient.login(u, p);
         ApiClient.setToken(res.access_token);
+        (document.getElementById('admin-password') as HTMLInputElement).value = '';
         this.showToast(`Hoş geldiniz, ${res.full_name}`);
         await this.loadAdminDashboard();
       } catch (err: any) {
@@ -1393,6 +1401,66 @@ class CesmeMarketApp {
         document.getElementById('admin-tab-products')!.hidden = target !== 'products';
         document.getElementById('admin-tab-pos-csv')!.hidden = target !== 'pos-csv';
         document.getElementById('admin-tab-media')!.hidden = target !== 'media';
+        document.getElementById('admin-tab-settings')!.hidden = target !== 'settings';
+      });
+    }
+
+    // Password Change Form (ADMIN only)
+    const pwdForm = document.getElementById('admin-password-change-form') as HTMLFormElement | null;
+    if (pwdForm) {
+      pwdForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const targetUser = (document.getElementById('pwd-target-username') as HTMLSelectElement).value;
+        const currentAdminPwd = (document.getElementById('pwd-current-admin') as HTMLInputElement).value;
+        const newPwd = (document.getElementById('pwd-new') as HTMLInputElement).value;
+        const confirmPwd = (document.getElementById('pwd-new-confirm') as HTMLInputElement).value;
+        const feedbackEl = document.getElementById('pwd-change-feedback')!;
+        feedbackEl.hidden = true;
+
+        if (newPwd !== confirmPwd) {
+          feedbackEl.textContent = 'Yeni şifre ile şifre tekrarı birbiriyle eşleşmiyor.';
+          feedbackEl.hidden = false;
+          return;
+        }
+        if (newPwd.length < 6) {
+          feedbackEl.textContent = 'Yeni şifre en az 6 karakter olmalıdır.';
+          feedbackEl.hidden = false;
+          return;
+        }
+
+        try {
+          const res = await ApiClient.changeUserPassword({
+            target_username: targetUser,
+            current_admin_password: currentAdminPwd,
+            new_password: newPwd,
+          });
+          pwdForm.reset();
+          this.showToast(res.message);
+        } catch (err: any) {
+          feedbackEl.textContent = err.message || 'Şifre güncellenemedi.';
+          feedbackEl.hidden = false;
+        }
+      });
+    }
+
+    // Store Contact Settings Form (ADMIN only)
+    const contactForm = document.getElementById('admin-contact-settings-form') as HTMLFormElement | null;
+    if (contactForm) {
+      contactForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          const updated = await ApiClient.updateStoreContact({
+            address: (document.getElementById('setting-store-address') as HTMLInputElement).value.trim(),
+            phone: (document.getElementById('setting-store-phone') as HTMLInputElement).value.trim(),
+            whatsapp: (document.getElementById('setting-store-whatsapp') as HTMLInputElement).value.trim(),
+            maps_url: (document.getElementById('setting-store-maps') as HTMLInputElement).value.trim(),
+          });
+          this.storeContact = updated;
+          this.renderStoreContact();
+          this.showToast('Mağaza iletişim bilgileri güncellendi.');
+        } catch (err: any) {
+          this.showToast(`İletişim bilgileri kaydedilemedi: ${err.message}`);
+        }
       });
     }
 

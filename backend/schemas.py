@@ -220,3 +220,17 @@ class TokenResponse(BaseModel):
     username: str
     full_name: str
     role: str
+
+
+class AdminPasswordChangeRequest(BaseModel):
+    target_username: str = Field(..., min_length=2, max_length=64)
+    current_admin_password: str = Field(..., min_length=4, max_length=128)
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+
+class StoreContactUpdateRequest(BaseModel):
+    address: str = Field(..., min_length=3, max_length=300)
+    phone: str = Field(..., min_length=7, max_length=40)
+    whatsapp: str = Field(..., min_length=7, max_length=40)
+    maps_url: str = Field(default="", max_length=1000)
+

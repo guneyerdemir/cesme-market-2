@@ -1,0 +1,40 @@
+nginx: configuration file /etc/nginx/nginx.conf test is successful — Kurulum ve SSL sertifikası tamamen başarılı! 🎉
+
+Artık hem bilgisayarınızdan hem de cep telefonunuzdan:
+👉 https://cesmemarket2.guneyerdemir.com
+
+adresine girerek Çeşme Market 2 platformunu canlı olarak kullanabilirsiniz!
+
+Canlı Ortam Bilgileri Özeti
+
+  
+
+  
+Müşteri Mağaza Adresi: https://cesmemarket2.guneyerdemir.com
+
+  
+Yönetim ve Sipariş Paneli: Sağ üstteki "🔐 Yönetim Paneli" butonundan:
+  
+  
+
+  
+Mağaza Yöneticisi (ADMIN): admin / CesmeAdmin2026!
+
+  
+Mağaza Personeli (STAFF): personel / CesmePersonel2026!
+
+  
+
+  
+Sunucu Servis Yönetimi (Hetzner):
+  
+  
+
+  
+Servis durumu: sudo systemctl status cesme-market-2
+
+  
+İleride GitHub'a yeni bir güncelleme pushladığımızda canlıya yansıtmak için sunucuda çalıştıracağınız tek komut:
+  
+bash
+cd /var/www/cesme-market-2 && git pull && npm run build && sudo systemctl restart cesme-market-2

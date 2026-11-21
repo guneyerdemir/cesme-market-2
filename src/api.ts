@@ -207,4 +207,27 @@ export class ApiClient {
       body: fd,
     });
   }
+
+  static async changeUserPassword(payload: {
+    target_username: string;
+    current_admin_password: string;
+    new_password: string;
+  }): Promise<{ updated: boolean; username: string; role: string; message: string }> {
+    return this.request('/api/v1/admin/users/change-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  static async updateStoreContact(payload: {
+    address: string;
+    phone: string;
+    whatsapp: string;
+    maps_url: string;
+  }): Promise<{ address: string; phone: string; whatsapp: string; maps_url: string }> {
+    return this.request('/api/v1/admin/settings/contact', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
 }

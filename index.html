@@ -448,7 +448,7 @@
       <div id="admin-login-section" class="admin-login-section">
         <form id="admin-login-form" action="/api/v1/auth/login" method="POST" class="admin-login-card">
           <h3>Personel ve Yönetici Girişi</h3>
-          <p class="field-hint">Siparişleri onaylamak, hazırlamak ve ürün kataloğunu yönetmek için giriş yapın.</p>
+          <p class="field-hint">Siparişleri onaylamak, hazırlamak ve ürün kataloğunu yönetmek için yetkili hesabınızla giriş yapın.</p>
 
           <div class="form-field">
             <label for="admin-username">Kullanıcı Adı <span aria-hidden="true">*</span></label>
@@ -460,8 +460,8 @@
               autocorrect="off"
               autocapitalize="none"
               spellcheck="false"
+              placeholder="Kullanıcı adınız"
               required
-              value="admin"
             />
           </div>
 
@@ -472,17 +472,9 @@
               id="admin-password"
               name="password"
               autocomplete="current-password"
+              placeholder="••••••••"
               required
-              value="CesmeAdmin2026!"
             />
-          </div>
-
-          <div class="demo-credentials-box">
-            <strong>Yerel Test Hesapları (Hızlı Seçim):</strong>
-            <div class="demo-cred-btns">
-              <button type="button" id="btn-fill-admin" class="btn-outline-sm">👑 Yönetici (admin)</button>
-              <button type="button" id="btn-fill-staff" class="btn-outline-sm">🧑‍💼 Mağaza Personeli (personel)</button>
-            </div>
           </div>
 
           <div id="admin-login-error" class="form-error-box" role="alert" hidden></div>
@@ -534,6 +526,9 @@
           </button>
           <button type="button" id="admin-media-tab-btn" class="admin-tab-btn" data-admin-tab="media" role="tab" aria-selected="false" hidden>
             🖼️ Galeri & sponsorlar
+          </button>
+          <button type="button" id="admin-settings-tab-btn" class="admin-tab-btn" data-admin-tab="settings" role="tab" aria-selected="false" hidden>
+            🔐 Şifre & Mağaza Ayarları
           </button>
         </div>
 
@@ -748,6 +743,88 @@
                 Yeni sipariş oluşturulduğunda veya sipariş durumu değiştiğinde çalışan bağımsız bildirim günlükleri:
               </p>
               <div id="admin-notifications-feed" class="notifications-feed"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEKME 5: ŞİFRE VE MAĞAZA İLETİŞİM AYARLARI (YALNIZCA ADMIN) -->
+        <div id="admin-tab-settings" class="admin-tab-pane" hidden>
+          <div class="pos-integration-grid">
+            <div class="pos-card">
+              <h3>🔐 Yönetici ve Personel Şifre Değiştirme</h3>
+              <p class="field-hint">
+                Mağaza yöneticisi (<code>admin</code>) veya mağaza personeli (<code>personel</code>) hesaplarının giriş şifrelerini buradan güvenli şekilde değiştirebilirsiniz.
+              </p>
+              <form id="admin-password-change-form" class="admin-settings-form">
+                <div class="form-field">
+                  <label for="pwd-target-username">Şifresi Değiştirilecek Hesap <span aria-hidden="true">*</span></label>
+                  <select id="pwd-target-username" required>
+                    <option value="admin">👑 Yönetici (admin)</option>
+                    <option value="personel">🧑‍💼 Mağaza Personeli (personel)</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="pwd-current-admin">Mevcut Yönetici Şifreniz <span aria-hidden="true">*</span></label>
+                  <input
+                    type="password"
+                    id="pwd-current-admin"
+                    autocomplete="current-password"
+                    required
+                    minlength="4"
+                    placeholder="Doğrulama için mevcut admin şifreniz"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="pwd-new">Yeni Şifre (En az 6 karakter) <span aria-hidden="true">*</span></label>
+                  <input
+                    type="password"
+                    id="pwd-new"
+                    autocomplete="new-password"
+                    required
+                    minlength="6"
+                    placeholder="Yeni güçlü şifre"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="pwd-new-confirm">Yeni Şifre (Tekrar) <span aria-hidden="true">*</span></label>
+                  <input
+                    type="password"
+                    id="pwd-new-confirm"
+                    autocomplete="new-password"
+                    required
+                    minlength="6"
+                    placeholder="Yeni şifreyi tekrar yazın"
+                  />
+                </div>
+                <div id="pwd-change-feedback" class="form-error-box" hidden></div>
+                <button type="submit" class="btn-primary-yellow">🔒 Şifreyi Güncelle</button>
+              </form>
+            </div>
+
+            <div class="pos-card">
+              <h3>📍 Mağaza Adres, Telefon ve İletişim Bilgileri</h3>
+              <p class="field-hint">
+                Müşterilerin vitrinde ve sipariş ekranında gördüğü adres, telefon, WhatsApp sipariş hattı ve Google Haritalar yol tarifi bağlantısını buradan güncelleyebilirsiniz.
+              </p>
+              <form id="admin-contact-settings-form" class="admin-settings-form">
+                <div class="form-field">
+                  <label for="setting-store-address">Mağaza Açık Adresi <span aria-hidden="true">*</span></label>
+                  <input type="text" id="setting-store-address" required maxlength="300" />
+                </div>
+                <div class="form-field">
+                  <label for="setting-store-phone">Mağaza Telefon Numarası <span aria-hidden="true">*</span></label>
+                  <input type="text" id="setting-store-phone" required maxlength="40" />
+                </div>
+                <div class="form-field">
+                  <label for="setting-store-whatsapp">WhatsApp Sipariş Hattı (Ülke koduyla, örn: 905396194888) <span aria-hidden="true">*</span></label>
+                  <input type="text" id="setting-store-whatsapp" required maxlength="40" />
+                </div>
+                <div class="form-field">
+                  <label for="setting-store-maps">Google Haritalar (Yol Tarifi) Linki</label>
+                  <input type="url" id="setting-store-maps" maxlength="1000" />
+                </div>
+                <button type="submit" class="btn-primary-yellow">💾 İletişim Bilgilerini Kaydet</button>
+              </form>
             </div>
           </div>
         </div>

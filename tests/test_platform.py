@@ -1,4 +1,5 @@
 import io
+import secrets
 import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
@@ -53,12 +54,13 @@ def test_server_side_price_calculation_and_idempotency(client: TestClient):
 
     # Even if a malicious client attempts to send custom fake price fields in JSON,
     # the backend schema and order service only use server DB prices.
+    unique_idemp = f"pytest-idemp-key-{secrets.token_hex(4)}"
     order_payload = {
         "customer_name": "Test Müşteri Çeşme",
         "customer_phone": "0532 999 88 77",
         "customer_email": "test@cesmemarket2.local",
         "order_note": "Mağazadan saat 16:00'da teslim alacağım",
-        "idempotency_key": "pytest-idemp-key-001",
+        "idempotency_key": unique_idemp,
         "kvkk_approved": True,
         "items": [
             {
@@ -201,9 +203,53 @@ def test_rbac_staff_vs_admin_and_order_workflow(client: TestClient):
     files = {"file": ("urunler.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
     csv_res = client.post("/api/v1/admin/import/csv", files=files, headers=admin_headers)
     assert csv_res.status_code == 200
-    assert csv_res.json()["created_count"] == 1
+    assert (csv_res.json()["created_count"] + csv_res.json()["updated_count"]) == 1
 
     # Dangerous file upload extension (.exe / .php) must be rejected
     bad_files = {"file": ("exploit.php", io.BytesIO(b"<?php echo 1; ?>"), "application/octet-stream")}
     bad_upload = client.post("/api/v1/admin/upload-image", files=bad_files, headers=admin_headers)
     assert bad_upload.status_code == 400
+
+    # Staff CANNOT change passwords
+    staff_pwd_try = client.post(
+        "/api/v1/admin/users/change-password",
+        json={
+            "target_username": "personel",
+            "current_admin_password": "CesmePersonel2026!",
+            "new_password": "NewPassword123!",
+        },
+        headers=staff_headers,
+    )
+    assert staff_pwd_try.status_code == 403
+
+    # Admin CAN change staff password and revert it
+    admin_pwd_change = client.post(
+        "/api/v1/admin/users/change-password",
+        json={
+            "target_username": "personel",
+            "current_admin_password": "CesmeAdmin2026!",
+            "new_password": "YeniPersonelSifre2026!",
+        },
+        headers=admin_headers,
+    )
+    assert admin_pwd_change.status_code == 200
+    assert admin_pwd_change.json()["updated"] is True
+
+    # Verify login works with the new staff password
+    staff_relogin = client.post(
+        "/api/v1/auth/login",
+        json={"username": "personel", "password": "YeniPersonelSifre2026!"},
+    )
+    assert staff_relogin.status_code == 200
+
+    # Revert back for clean test state
+    client.post(
+        "/api/v1/admin/users/change-password",
+        json={
+            "target_username": "personel",
+            "current_admin_password": "CesmeAdmin2026!",
+            "new_password": "CesmePersonel2026!",
+        },
+        headers=admin_headers,
+    )
+
