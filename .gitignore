@@ -1,0 +1,30 @@
+# Python & Virtual Environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database & Local Storage
+*.db
+*.sqlite3
+backups/
+uploads/
+
+# Environment Variables
+.env
+.env.local
+
+# Node / Frontend
+node_modules/
+dist/
+frontend/dist/
+.vite/
+.pytest_cache/
+uploads/
+
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log

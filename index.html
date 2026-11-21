@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Çeşme Market 2 – Dijital Mağaza & Online Sipariş</title>
+  <meta name="description" content="Çeşme Market 2 alkolsüz ürün kataloğundan sipariş verin, mağazadan teslim alın ve mağazada ödeyin." />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- ÜST KURUMSAL NAVİGASYON BARI -->
+  <header class="top-navbar" role="banner">
+    <div class="brand-group" id="btn-brand-home" role="button" tabindex="0" aria-label="Çeşme Market 2 Ana Görünüm">
+      <div class="brand-logo-badge">ÇM2</div>
+      <div class="brand-titles">
+        <span class="brand-title">ÇEŞME MARKET 2</span>
+        <span class="brand-subtitle">DİJİTAL MAĞAZA • MAĞAZADAN TESLİM</span>
+      </div>
+    </div>
+
+    <!-- ÜRÜN ARAMA (<search> semantik sarmalayıcı) -->
+    <search class="header-search-wrap" aria-label="Mağaza içi ürün ve barkod arama">
+      <form id="global-search-form" action="/api/v1/products" method="GET">
+        <label for="global-search-input" class="visually-hidden">Ürün adı veya barkod ara</label>
+        <input
+          type="search"
+          id="global-search-input"
+          name="q"
+          placeholder="Alkolsüz içecek veya atıştırmalık ara..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="none"
+          spellcheck="false"
+          enterkeyhint="search"
+        />
+        <button type="submit" class="btn-search-submit">Ara</button>
+      </form>
+    </search>
+
+    <!-- GÖRÜNÜM MODU ANAHTARI & EYLEMLER -->
+    <nav class="header-actions" aria-label="Mağaza görünüm ve yönetim menüsü">
+      <div class="mode-switcher" role="group" aria-label="Mağaza görünümü">
+        <button type="button" id="btn-mode-landing" class="mode-btn active" aria-pressed="true">Vitrin</button>
+        <button type="button" id="btn-mode-2d" class="mode-btn" aria-pressed="false">📋 Ürün Kataloğu</button>
+      </div>
+
+      <button type="button" id="btn-open-tracker" class="action-pill-btn" title="Sipariş Durumu Sorgula">
+        📦 <span class="hide-sm">Sipariş Takip</span>
+      </button>
+
+      <button type="button" id="btn-open-admin" class="action-pill-btn admin-pill" title="Mağaza Personel ve Yönetim Paneli">
+        🔐 <span class="hide-sm">Yönetim Paneli</span>
+      </button>
+
+      <a id="header-whatsapp-link" class="header-whatsapp-link" target="_blank" rel="noopener noreferrer" hidden aria-label="WhatsApp ile mağazaya yazın">🟢 <span>WhatsApp</span></a>
+
+      <button type="button" id="btn-open-cart" class="cart-trigger-btn" aria-label="Alışveriş Sepetini Aç">
+        🛒 <span class="cart-label">Sepetim</span>
+        <span id="header-cart-badge" class="cart-count-badge">0</span>
+        <span id="header-cart-total" class="cart-total-chip">0,00 ₺</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ANA İÇERİK ALANI -->
+  <main id="app-main">
+    <!-- 1. VİTRİN / KARŞILAMA KAPAK KATMANI (İsteğe bağlı açılır veya Vitrin butonuyla gösterilir) -->
+    <section id="view-landing" class="landing-view">
+      <div class="landing-hero-grid">
+        <img src="/assets/references/cesme-market-2-front.jpeg" alt="Çeşme Market 2'nin sarı tabelalı gerçek ön cephesi" class="landing-hero-image" fetchpriority="high" />
+        <div class="landing-hero-shade" aria-hidden="true"></div>
+        <div class="landing-hero-text">
+          <span class="hero-kicker">ÇEŞME MARKET 2 • DİJİTAL MAĞAZA</span>
+          <h1>Çeşme Market 2, artık dijitalde.</h1>
+          <p class="hero-lead">
+            Alkolsüz içecek ve atıştırmalıkları ürün kataloğundan seçin. Siparişinizi oluşturun; hazır olduğunda mağazadan teslim alıp ödeyin.
+          </p>
+          <div class="hero-cta-row">
+            <button type="button" id="btn-hero-enter-2d" class="btn-secondary-dark btn-lg">
+              📋 Ürün kataloğuna göz at
+            </button>
+          </div>
+          <div class="hero-trust-badges">
+            <div class="trust-badge">🛍️ <strong>Kolay sipariş:</strong> Ürünleri seçin, siparişinizi gönderin</div>
+            <div class="trust-badge">📍 <strong>Mağazadan teslim:</strong> Hazır olduğunda gelip alın</div>
+            <div class="trust-badge">💳 <strong>Mağazada ödeme:</strong> Ödeme teslim alırken yapılır</div>
+          </div>
+        </div>
+      </div>
+
+      <section class="landing-discovery-section" aria-labelledby="landing-categories-title">
+        <div class="landing-section-heading">
+          <div>
+            <span class="section-eyebrow">MAĞAZAYI KEŞFET</span>
+            <h2 id="landing-categories-title">Bugün ne arıyorsunuz?</h2>
+          </div>
+          <button type="button" id="btn-landing-open-catalog" class="btn-outline-sm">Tüm ürünleri gör →</button>
+        </div>
+        <div id="landing-category-grid" class="landing-category-grid" aria-live="polite"></div>
+        <p class="landing-demo-note">Örnek ürünler ve fiyatlar tanıtım amaçlıdır; gerçek mağaza fiyatı ve stok bilgisi olarak değerlendirilmemelidir.</p>
+      </section>
+
+      <section class="landing-photo-gallery-section" aria-labelledby="landing-photo-gallery-title">
+        <div class="landing-section-heading">
+          <div>
+            <span class="section-eyebrow">MAĞAZAMIZDAN KARELER</span>
+            <h2 id="landing-photo-gallery-title">Çeşme Market 2'den</h2>
+          </div>
+          <div class="gallery-controls">
+            <button type="button" id="gallery-prev" class="btn-outline-sm" aria-label="Önceki fotoğraf">←</button>
+            <button type="button" id="gallery-next" class="btn-outline-sm" aria-label="Sonraki fotoğraf">→</button>
+          </div>
+        </div>
+        <div id="store-photo-gallery" class="store-photo-gallery" aria-live="polite">
+          <p class="gallery-empty">Mağaza, çalışan ve müşterilerden fotoğraflar yakında burada.</p>
+        </div>
+      </section>
+
+      <section class="landing-discovery-section landing-featured-section" aria-labelledby="landing-featured-title">
+        <div class="landing-section-heading">
+          <div>
+            <span class="section-eyebrow">ALKOLSÜZ ÜRÜNLER</span>
+            <h2 id="landing-featured-title">Öne çıkanlar</h2>
+          </div>
+          <button type="button" id="btn-landing-featured-catalog" class="btn-outline-sm">Kataloğa git →</button>
+        </div>
+        <div id="landing-featured-grid" class="landing-featured-grid"></div>
+      </section>
+
+      <section id="sponsor-section" class="sponsor-section" aria-labelledby="sponsor-title">
+        <div class="landing-section-heading">
+          <div>
+            <span class="section-eyebrow">BİRLİKTE DAHA GÜÇLÜ</span>
+            <h2 id="sponsor-title">Sponsor Tedarikçilerimiz</h2>
+          </div>
+        </div>
+        <div id="sponsor-banner-list" class="sponsor-banner-list">
+          <p class="sponsor-empty">Sponsor banner'ları eklendiğinde burada gösterilecek.</p>
+        </div>
+      </section>
+
+      <!-- NASIL ÇALIŞIR BÖLÜMÜ -->
+      <div class="how-it-works-section">
+        <h2>Nasıl Çalışır? (4 Adımda Kolay Alışveriş)</h2>
+        <div class="steps-grid">
+          <article class="step-card">
+            <div class="step-num">1</div>
+            <h3>Kataloğu keşfet</h3>
+            <p>Alkolsüz içecek ve atıştırmalık kategorilerini inceleyin ya da ürün aramasını kullanın.</p>
+          </article>
+          <article class="step-card">
+            <div class="step-num">2</div>
+            <h3>Ürüne Tıkla & Sepete Ekle</h3>
+            <p>Ürün detaylarını, satış birimini ve stok bilgisini görüntüleyip istediğiniz miktarı sepetinize ekleyin.</p>
+          </article>
+          <article class="step-card">
+            <div class="step-num">3</div>
+            <h3>Siparişini Gönder</h3>
+            <p>Adınız ve telefon numaranızla üyelik zorunluluğu olmadan siparişinizi oluşturun; mağaza personelimiz hemen hazırlamaya başlasın.</p>
+          </article>
+          <article class="step-card">
+            <div class="step-num">4</div>
+            <h3>Mağazadan Teslim Al & Öde</h3>
+            <p>Sipariş durumunuz <strong>"Hazır"</strong> olduğunda Çeşme Market 2'ye gelin, ödemenizi mağazada yaparak ürünlerinizi teslim alın.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ÜRÜN KATALOĞU -->
+    <section id="view-2d-catalog" class="catalog-2d-view" hidden aria-label="Ürün Kataloğu">
+      <div class="catalog-banner">
+        <div>
+          <h2>Çeşme Market 2 – Hızlı Ürün Kataloğu</h2>
+          <p id="catalog-disclaimer-text">
+            Alkolsüz içecek ve atıştırmalıkları kategorilere göre filtreleyebilir veya arayabilirsiniz.
+          </p>
+        </div>
+        <button type="button" id="btn-return-to-landing" class="btn-primary-yellow">
+          Vitrine dön
+        </button>
+      </div>
+
+      <div class="catalog-layout">
+        <!-- Kategori filtresi -->
+        <aside class="catalog-sidebar" aria-label="Kategoriler">
+          <div class="sidebar-card">
+            <h3>Kategoriler</h3>
+            <div id="catalog-category-list" class="category-filter-list"></div>
+          </div>
+        </aside>
+
+        <!-- Sağ Ürün Izgarası -->
+        <div class="catalog-content">
+          <div class="catalog-toolbar">
+            <div id="catalog-result-count" class="result-count-label">Ürünler yükleniyor...</div>
+            <div id="active-filter-chips" class="active-filter-chips"></div>
+          </div>
+          <div id="catalog-product-grid" class="product-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer id="store-contact" class="store-contact-footer">
+      <div class="store-contact-inner">
+        <div>
+          <span class="section-eyebrow">BİZE ULAŞIN</span>
+          <h2>Çeşme Market 2</h2>
+          <p id="store-contact-address">Mağaza adresi ayarlanıyor.</p>
+        </div>
+        <div class="store-contact-actions">
+          <a id="store-contact-phone" class="btn-outline-sm" aria-label="Telefonla mağazayı ara" hidden>📞 Telefon</a>
+          <a id="store-contact-directions" class="btn-outline-sm" target="_blank" rel="noopener noreferrer" hidden>📍 Yol tarifi</a>
+          <a id="store-contact-whatsapp" class="btn-primary-yellow" target="_blank" rel="noopener noreferrer" hidden>WhatsApp</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- BAĞIMSIZ MODAL DİYALOGLAR (Native <dialog> + closedby="any" + Fallback) -->
+  <!-- ===================================================================== -->
+
+  <!-- ÜRÜN DETAY PENCERESİ -->
+  <dialog id="dialog-product-detail" closedby="any" aria-labelledby="dlg-prod-title" class="app-dialog product-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-header">
+        <span id="dlg-prod-category-badge" class="category-tag">Kategori</span>
+        <form method="dialog">
+          <button type="submit" class="dialog-close-btn" aria-label="Ürün penceresini kapat">✕</button>
+        </form>
+      </div>
+
+      <div class="product-detail-body">
+        <div id="dlg-prod-visual" class="product-visual-box"></div>
+        <div class="product-info-col">
+          <div class="prod-meta-row">
+            <span id="dlg-prod-category" class="prod-category-chip">Kategori</span>
+            <span id="dlg-prod-barcode" class="prod-barcode-chip">Barkod</span>
+          </div>
+          <h2 id="dlg-prod-title" class="prod-detail-title">Ürün Adı</h2>
+          <p id="dlg-prod-desc" class="prod-detail-desc"></p>
+
+          <div class="prod-price-box">
+            <div>
+              <span id="dlg-prod-price" class="prod-big-price">0,00 ₺</span>
+              <span id="dlg-prod-unit" class="prod-unit-label">/ Adet</span>
+            </div>
+            <div id="dlg-prod-stock-badge" class="stock-status-badge">Stokta Mevcut</div>
+          </div>
+
+          <p id="dlg-prod-stock-note" class="stock-verification-note"></p>
+
+          <div class="prod-action-row">
+            <div class="qty-stepper" role="group" aria-label="Ürün miktarı seçimi">
+              <button type="button" id="dlg-qty-minus" class="qty-btn" aria-label="Miktarı azalt">−</button>
+              <input type="text" id="dlg-qty-input" value="1" inputmode="numeric" aria-label="Miktar" readonly />
+              <button type="button" id="dlg-qty-plus" class="qty-btn" aria-label="Miktarı artır">+</button>
+            </div>
+            <button type="button" id="dlg-btn-add-cart" class="btn-primary-yellow btn-add-main" autofocus>
+              🛒 Sepete Ekle
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 2. ALIŞVERİŞ SEPETİ VE SİPARİŞ OLUŞTURMA DİYALOĞU -->
+  <dialog id="dialog-cart-checkout" closedby="any" aria-labelledby="dlg-cart-title" class="app-dialog cart-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-header">
+        <h2 id="dlg-cart-title">🛒 Alışveriş Sepetim & Sipariş Tamamlama</h2>
+        <form method="dialog">
+          <button type="submit" class="dialog-close-btn" aria-label="Sepet penceresini kapat">✕</button>
+        </form>
+      </div>
+
+      <div class="cart-checkout-grid">
+        <!-- Sol: Sepet Ürün Listesi -->
+        <div class="cart-items-pane">
+          <div id="cart-empty-state" class="empty-state-box" hidden>
+            <div class="empty-icon">🧺</div>
+            <h3>Alışveriş Sepetiniz Henüz Boş</h3>
+            <p>Katalogdan ürün seçerek sepetinize ekleyebilirsiniz.</p>
+          </div>
+
+          <div id="cart-items-list" class="cart-items-list"></div>
+
+          <div id="cart-summary-box" class="cart-summary-box">
+            <div class="summary-line">
+              <span>Ara Toplam</span>
+              <strong id="cart-subtotal-val">0,00 ₺</strong>
+            </div>
+            <div class="summary-line">
+              <span>Hazırlama & Mağazadan Teslim</span>
+              <strong class="free-tag">Ücretsiz</strong>
+            </div>
+            <div class="summary-line total-line">
+              <span>Ödenecek Genel Toplam (Mağazada)</span>
+              <strong id="cart-total-val">0,00 ₺</strong>
+            </div>
+            <p class="price-verify-hint">
+              * Ürün fiyatları sipariş anında sunucu tarafından doğrulanır. Ödeme, ürünleri Çeşme Market 2'den teslim alırken nakit veya kredi kartı ile yapılır.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sağ: Misafir Sipariş Tamamlama Formu -->
+        <div class="checkout-form-pane">
+          <form id="checkout-order-form" action="/api/v1/orders" method="POST" aria-labelledby="checkout-form-heading" novalidate>
+            <h3 id="checkout-form-heading">Mağazadan Teslim Sipariş Bilgileri</h3>
+
+            <div class="pickup-info-banner">
+              📍 <strong>Teslimat Noktası:</strong> Çeşme Market 2 Fiziksel Mağaza<br />
+              💳 <strong>Ödeme Yöntemi:</strong> Teslimatta Mağazada Ödeme (Online Ödeme Gerekmez)
+            </div>
+
+            <div class="form-field">
+              <label for="checkout-name">Adınız Soyadınız <span aria-hidden="true">*</span></label>
+              <input
+                type="text"
+                id="checkout-name"
+                name="customer_name"
+                autocomplete="name"
+                required
+                minlength="2"
+                maxlength="120"
+                enterkeyhint="next"
+                aria-describedby="checkout-name-help"
+              />
+              <span id="checkout-name-help" class="field-hint">Siparişi teslim alacak kişinin adı ve soyadı.</span>
+            </div>
+
+            <div class="form-field">
+              <label for="checkout-phone">Cep Telefonu Numaranız <span aria-hidden="true">*</span></label>
+              <input
+                type="text"
+                id="checkout-phone"
+                name="customer_phone"
+                autocomplete="tel"
+                inputmode="tel"
+                required
+                minlength="10"
+                maxlength="20"
+                enterkeyhint="next"
+                aria-describedby="checkout-phone-help"
+              />
+              <span id="checkout-phone-help" class="field-hint">Örn: 0532 123 45 67 (Sipariş hazır olduğunda iletişim için kullanılır).</span>
+            </div>
+
+            <div class="form-field">
+              <label for="checkout-email">E-posta Adresiniz (İsteğe Bağlı)</label>
+              <input
+                type="email"
+                id="checkout-email"
+                name="customer_email"
+                autocomplete="email"
+                autocorrect="off"
+                autocapitalize="none"
+                spellcheck="false"
+                enterkeyhint="next"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="checkout-note">Sipariş ve Hazırlık Notunuz (İsteğe Bağlı)</label>
+              <textarea
+                id="checkout-note"
+                name="order_note"
+                rows="2"
+                maxlength="500"
+                placeholder="Örn: Domatesler sert olsun, saat 17:00 gibi mağazadan teslim alacağım..."
+              ></textarea>
+            </div>
+
+            <div class="form-checkbox-row">
+              <input type="checkbox" id="checkout-kvkk" name="kvkk_approved" checked required />
+              <label for="checkout-kvkk">
+                Siparişimin hazırlanması ve teslimatı amacıyla iletişim bilgilerimin KVKK kapsamında işlenmesini ve siparişimi mağazadan teslim alırken ödeme yapacağımı onaylıyorum.
+              </label>
+            </div>
+
+            <div id="checkout-form-error" class="form-error-box" role="alert" aria-live="polite" hidden></div>
+
+            <button type="submit" id="btn-submit-order" class="btn-primary-yellow btn-submit-order">
+              ✅ Siparişi Tamamla (Mağazada Öde)
+            </button>
+            <button type="button" id="btn-whatsapp-order" class="btn-whatsapp-order" disabled>
+              WhatsApp ile sipariş talebi gönder
+            </button>
+            <p id="whatsapp-order-hint" class="field-hint">WhatsApp siparişi için mağaza numarası ayarlanmalıdır.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 3. SİPARİŞ TAKİP VE DURUM SORGULAMA DİYALOĞU -->
+  <dialog id="dialog-order-tracker" closedby="any" aria-labelledby="dlg-tracker-title" class="app-dialog tracker-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-header">
+        <h2 id="dlg-tracker-title">📦 Sipariş Durumu Takibi</h2>
+        <form method="dialog">
+          <button type="submit" class="dialog-close-btn" aria-label="Sipariş takip penceresini kapat">✕</button>
+        </form>
+      </div>
+
+      <form id="order-track-form" action="/api/v1/orders/track" method="GET" class="tracker-search-bar">
+        <div class="form-field">
+          <label for="track-order-no">Sipariş Numaranız <span aria-hidden="true">*</span></label>
+          <input
+            type="text"
+            id="track-order-no"
+            name="order_number"
+            required
+            autocorrect="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="Örn: CM2-20261121-1001"
+          />
+        </div>
+        <button type="submit" class="btn-primary-yellow">Durumu Sorgula</button>
+      </form>
+
+      <div id="tracker-result-area" class="tracker-result-area"></div>
+    </div>
+  </dialog>
+
+  <!-- MAĞAZA YÖNETİM VE PERSONEL PANELİ -->
+  <dialog id="dialog-admin-panel" closedby="closerequest" aria-labelledby="dlg-admin-title" class="app-dialog admin-dialog">
+    <div class="dialog-inner admin-dialog-inner">
+      <div class="dialog-header admin-header">
+        <div>
+          <h2 id="dlg-admin-title">🏪 Çeşme Market 2 – Mağaza Yönetim ve Sipariş Paneli</h2>
+          <span id="admin-user-badge" class="admin-role-chip">Giriş Yapılmadı</span>
+        </div>
+        <div class="admin-header-actions">
+          <button type="button" id="btn-admin-logout" class="btn-outline-sm" hidden>Çıkış Yap</button>
+          <form method="dialog">
+            <button type="submit" class="dialog-close-btn" aria-label="Yönetim panelini kapat">✕ Mağazaya Dön</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- A) YÖNETİCİ / PERSONEL GİRİŞ EKRANI -->
+      <div id="admin-login-section" class="admin-login-section">
+        <form id="admin-login-form" action="/api/v1/auth/login" method="POST" class="admin-login-card">
+          <h3>Personel ve Yönetici Girişi</h3>
+          <p class="field-hint">Siparişleri onaylamak, hazırlamak ve ürün kataloğunu yönetmek için giriş yapın.</p>
+
+          <div class="form-field">
+            <label for="admin-username">Kullanıcı Adı <span aria-hidden="true">*</span></label>
+            <input
+              type="text"
+              id="admin-username"
+              name="username"
+              autocomplete="username"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              value="admin"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="admin-password">Şifre <span aria-hidden="true">*</span></label>
+            <input
+              type="password"
+              id="admin-password"
+              name="password"
+              autocomplete="current-password"
+              required
+              value="CesmeAdmin2026!"
+            />
+          </div>
+
+          <div class="demo-credentials-box">
+            <strong>Yerel Test Hesapları (Hızlı Seçim):</strong>
+            <div class="demo-cred-btns">
+              <button type="button" id="btn-fill-admin" class="btn-outline-sm">👑 Yönetici (admin)</button>
+              <button type="button" id="btn-fill-staff" class="btn-outline-sm">🧑‍💼 Mağaza Personeli (personel)</button>
+            </div>
+          </div>
+
+          <div id="admin-login-error" class="form-error-box" role="alert" hidden></div>
+
+          <button type="submit" class="btn-primary-yellow btn-block">Giriş Yap</button>
+        </form>
+      </div>
+
+      <!-- B) YÖNETİM PANELİ ANA İÇERİĞİ -->
+      <div id="admin-dashboard-section" class="admin-dashboard-section" hidden>
+        <!-- Özet Kartları -->
+        <div class="admin-kpi-grid">
+          <div class="kpi-card kpi-new">
+            <span class="kpi-label">Yeni / Onay Bekleyen</span>
+            <strong id="kpi-new-orders" class="kpi-val">0</strong>
+          </div>
+          <div class="kpi-card kpi-approved">
+            <span class="kpi-label">Onaylanan Siparişler</span>
+            <strong id="kpi-approved-orders" class="kpi-val">0</strong>
+          </div>
+          <div class="kpi-card kpi-preparing">
+            <span class="kpi-label">Hazırlanan Siparişler</span>
+            <strong id="kpi-preparing-orders" class="kpi-val">0</strong>
+          </div>
+          <div class="kpi-card kpi-ready">
+            <span class="kpi-label">Teslime Hazır</span>
+            <strong id="kpi-ready-orders" class="kpi-val">0</strong>
+          </div>
+          <div class="kpi-card kpi-delivered">
+            <span class="kpi-label">Tamamlanan (Teslim)</span>
+            <strong id="kpi-delivered-orders" class="kpi-val">0</strong>
+          </div>
+          <div class="kpi-card kpi-revenue">
+            <span class="kpi-label">Toplam Sipariş Tutarı</span>
+            <strong id="kpi-total-revenue" class="kpi-val">0,00 ₺</strong>
+          </div>
+        </div>
+
+        <!-- Sekmeler -->
+        <div class="admin-tabs" role="tablist">
+          <button type="button" class="admin-tab-btn active" data-admin-tab="orders" role="tab" aria-selected="true">
+            📦 Sipariş Yönetimi
+          </button>
+          <button type="button" class="admin-tab-btn" data-admin-tab="products" role="tab" aria-selected="false">
+            🏷️ Ürün ve stok yönetimi
+          </button>
+          <button type="button" class="admin-tab-btn" data-admin-tab="pos-csv" role="tab" aria-selected="false">
+            🔄 POS / Excel-CSV Aktarım & Bildirimler
+          </button>
+          <button type="button" id="admin-media-tab-btn" class="admin-tab-btn" data-admin-tab="media" role="tab" aria-selected="false" hidden>
+            🖼️ Galeri & sponsorlar
+          </button>
+        </div>
+
+        <!-- SEKME 1: SİPARİŞ YÖNETİMİ -->
+        <div id="admin-tab-orders" class="admin-tab-pane">
+          <section id="admin-live-location-panel" class="admin-live-location-panel" hidden aria-labelledby="admin-live-location-title">
+            <div class="admin-pane-toolbar">
+              <div>
+                <h3 id="admin-live-location-title">Müşterilerin canlı konumu</h3>
+                <p class="field-hint">Yalnızca konum paylaşımını başlatmış müşteriler görünür. Son konum 15 saniyede bir yenilenir.</p>
+              </div>
+              <button type="button" id="btn-refresh-live-locations" class="btn-outline-sm">Konumları yenile</button>
+            </div>
+            <div class="admin-live-location-layout">
+              <div id="admin-live-location-list" class="admin-live-location-list" aria-live="polite"></div>
+              <div class="admin-live-map-wrap">
+                <div id="admin-live-location-map" class="admin-live-location-map" role="img" aria-label="Müşteri ve mağazanın göreli konum görünümü"></div>
+                <small>Konum görünümü bu sayfada oluşturulur; müşteri koordinatları harici harita servisine gönderilmez. Mağaza: Narlı Mh. Çelebi Sk. No: 53/B.</small>
+              </div>
+            </div>
+          </section>
+          <div class="admin-pane-toolbar">
+            <div class="filter-row">
+              <label for="admin-order-status-filter">Durum Filtresi:</label>
+              <select id="admin-order-status-filter">
+                <option value="ALL">Tüm Siparişler</option>
+                <option value="YENI_SIPARIS">Yeni Sipariş</option>
+                <option value="ONAY_BEKLIYOR">Onay Bekliyor</option>
+                <option value="ONAYLANDI">Onaylandı</option>
+                <option value="HAZIRLANIYOR">Hazırlanıyor</option>
+                <option value="HAZIR">Hazır (Teslim Bekliyor)</option>
+                <option value="TESLIM_EDILDI">Teslim Edildi</option>
+                <option value="IPTAL_EDILDI">İptal Edildi</option>
+              </select>
+              <button type="button" id="btn-refresh-orders" class="btn-outline-sm">🔄 Yenile</button>
+            </div>
+            <button type="button" id="btn-export-orders-csv" class="btn-outline-sm">📥 Siparişleri CSV İndir</button>
+          </div>
+
+          <!-- Responsive Table Wrapper -->
+          <div tabindex="0" role="region" aria-labelledby="admin-orders-caption" class="table-wrapper">
+            <table class="responsive-admin-table orders-table">
+              <caption id="admin-orders-caption" class="visually-hidden">Mağaza Sipariş Listesi ve Durum Yönetimi</caption>
+              <thead>
+                <tr>
+                  <th>Sipariş No</th>
+                  <th>Müşteri & Telefon</th>
+                  <th>Ürünler ve Miktarlar</th>
+                  <th>Toplam Tutar</th>
+                  <th>Mevcut Durum</th>
+                  <th>Hızlı Durum Güncelleme</th>
+                </tr>
+              </thead>
+              <tbody id="admin-orders-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SEKME 2: ÜRÜN VE STOK YÖNETİMİ -->
+        <div id="admin-tab-products" class="admin-tab-pane" hidden>
+          <div class="admin-pane-toolbar">
+            <button type="button" id="btn-toggle-new-product-form" class="btn-primary-yellow">
+              ➕ Yeni Ürün Ekle / Düzenle
+            </button>
+            <button type="button" id="btn-export-products-csv" class="btn-outline-sm">
+              📥 Ürün Kataloğunu CSV İndir
+            </button>
+          </div>
+
+          <!-- Ürün Ekleme / Düzenleme Formu -->
+          <form id="admin-product-form" class="admin-product-form" hidden>
+            <h3 id="admin-prod-form-title">Yeni Ürün Ekle</h3>
+            <input type="hidden" id="prod-form-id" value="" />
+            <input type="hidden" id="prod-form-image-url" value="" />
+            <div class="form-grid-3">
+              <div class="form-field">
+                <label for="prod-form-barcode">Barkod <span aria-hidden="true">*</span></label>
+                <input type="text" id="prod-form-barcode" required />
+              </div>
+              <div class="form-field">
+                <label for="prod-form-name">Ürün Adı <span aria-hidden="true">*</span></label>
+                <input type="text" id="prod-form-name" required />
+              </div>
+              <div class="form-field">
+                <label for="prod-form-category">Kategori <span aria-hidden="true">*</span></label>
+                <select id="prod-form-category" required></select>
+              </div>
+              <div class="form-field">
+                <label for="prod-form-price">Satış Fiyatı (₺) <span aria-hidden="true">*</span></label>
+                <input type="text" id="prod-form-price" inputmode="decimal" required />
+              </div>
+              <div class="form-field">
+                <label for="prod-form-unit">Satış Birimi</label>
+                <select id="prod-form-unit">
+                  <option value="Adet">Adet</option>
+                  <option value="Kg">Kg</option>
+                  <option value="Litre">Litre</option>
+                  <option value="Paket">Paket</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="prod-form-stock">Stok Miktarı</label>
+                <input type="text" id="prod-form-stock" inputmode="numeric" value="25" required />
+              </div>
+              <div class="form-field">
+                <label for="prod-form-color">Kart vurgu rengi</label>
+                <input type="color" id="prod-form-color" value="#F5C518" />
+              </div>
+              <div class="form-field">
+                <label for="prod-form-desc">Ürün Açıklaması</label>
+                <input type="text" id="prod-form-desc" placeholder="Ürün detayı..." />
+              </div>
+              <div class="form-field">
+                <label for="prod-form-image">Ürün Fotoğrafı (JPG, PNG veya WebP; en fazla 5 MB)</label>
+                <input type="file" id="prod-form-image" accept="image/jpeg,image/png,image/webp" />
+              </div>
+              <div class="form-field product-image-preview-field">
+                <img id="prod-form-image-preview" alt="Ürün fotoğrafı önizlemesi" hidden />
+                <button type="button" id="btn-clear-product-image" class="btn-outline-sm">Fotoğrafı kaldır</button>
+              </div>
+            </div>
+            <div class="form-actions-row">
+              <button type="submit" class="btn-primary-yellow">💾 Ürünü Kaydet</button>
+              <button type="button" id="btn-cancel-prod-form" class="btn-outline-sm">İptal</button>
+            </div>
+          </form>
+
+          <div tabindex="0" role="region" aria-labelledby="admin-products-caption" class="table-wrapper">
+            <table class="responsive-admin-table products-table">
+              <caption id="admin-products-caption" class="visually-hidden">Ürün Kataloğu</caption>
+              <thead>
+                <tr>
+                  <th>Barkod & Ürün Adı</th>
+                  <th>Kategori</th>
+                  <th>Fiyat / Birim</th>
+                  <th>Stok & Kaynak</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="admin-products-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="admin-tab-media" class="admin-tab-pane" hidden>
+          <div class="media-admin-intro">
+            <h3>Vitrin fotoğrafları ve sponsor banner'ları</h3>
+            <p>Yalnızca paylaşım izni alınmış mağaza, çalışan ve müşteri fotoğraflarını yayınlayın. Galeri fotoğrafları 3 saniyede bir sağdan sola geçer.</p>
+          </div>
+          <form id="admin-media-form" class="admin-product-form" hidden>
+            <h3 id="admin-media-form-title">Vitrin görseli ekle</h3>
+            <input type="hidden" id="media-form-id" />
+            <input type="hidden" id="media-form-image-url" />
+            <div class="form-grid-3">
+              <div class="form-field">
+                <label for="media-form-placement">Bölüm</label>
+                <select id="media-form-placement"><option value="gallery">Fotoğraf galerisi</option><option value="sponsor">Sponsor banner</option></select>
+              </div>
+              <div class="form-field">
+                <label for="media-form-title">Başlık / tedarikçi adı</label>
+                <input type="text" id="media-form-title" maxlength="180" placeholder="Örn. Mağazamızdan bir kare" />
+              </div>
+              <div class="form-field">
+                <label for="media-form-link">Sponsor bağlantısı (isteğe bağlı)</label>
+                <input type="url" id="media-form-link" placeholder="https://..." />
+              </div>
+              <div class="form-field">
+                <label for="media-form-order">Sıralama</label>
+                <input type="number" id="media-form-order" min="0" max="10000" value="0" />
+              </div>
+              <div class="form-field">
+                <label for="media-form-file">Görsel (JPG, PNG veya WebP; en fazla 5 MB)</label>
+                <input type="file" id="media-form-file" accept="image/jpeg,image/png,image/webp" />
+              </div>
+              <div class="form-field media-preview-field">
+                <img id="media-form-preview" alt="Seçilen banner veya galeri görseli önizlemesi" hidden />
+                <label class="form-checkbox-row"><input type="checkbox" id="media-form-active" checked /> Yayında</label>
+              </div>
+            </div>
+            <div class="form-actions-row">
+              <button type="submit" class="btn-primary-yellow">💾 Görseli kaydet</button>
+              <button type="button" id="btn-cancel-media-form" class="btn-outline-sm">İptal</button>
+            </div>
+          </form>
+          <div class="admin-pane-toolbar">
+            <button type="button" id="btn-add-media" class="btn-primary-yellow">➕ Galeri fotoğrafı / sponsor banner ekle</button>
+          </div>
+          <div id="admin-media-list" class="admin-media-list" aria-live="polite"></div>
+        </div>
+
+        <!-- SEKME 3: POS / EXCEL-CSV AKTARIM & BİLDİRİMLER -->
+        <div id="admin-tab-pos-csv" class="admin-tab-pane" hidden>
+          <div class="pos-integration-grid">
+            <div class="pos-card">
+              <h3>🔄 POS / ERP & Excel-CSV Ürün Aktarım Merkezi</h3>
+              <p>
+                Çeşme Market 2'nin kasa/barkod sisteminden alınan `.csv` formatındaki ürün, barkod, fiyat ve stok listesini buradan toplu olarak içe aktarabilirsiniz. İçe aktarılan ürünler otomatik olarak <strong>"Doğrulanmış Veri"</strong> statüsüne geçer.
+              </p>
+              <div id="pos-status-summary" class="pos-status-summary"></div>
+
+              <form id="csv-upload-form" class="csv-upload-box">
+                <label for="csv-file-input"><strong>CSV Dosyası Seçin</strong> (Zorunlu sütunlar: <code>barcode,name,price</code>)</label>
+                <input type="file" id="csv-file-input" accept=".csv" required />
+                <button type="submit" class="btn-primary-yellow">📤 CSV İçe Aktar ve Fiyat/Stok Güncelle</button>
+              </form>
+              <div id="csv-import-result" class="csv-import-result" hidden></div>
+            </div>
+
+            <div class="pos-card">
+              <h3>🔔 Bildirim Altyapısı ve Canlı Sipariş Kayıtları</h3>
+              <p>
+                Yeni sipariş oluşturulduğunda veya sipariş durumu değiştiğinde çalışan bağımsız bildirim günlükleri:
+              </p>
+              <div id="admin-notifications-feed" class="notifications-feed"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- BİLDİRİM TOAST KUTUSU -->
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
